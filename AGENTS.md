@@ -1,49 +1,51 @@
-# AGENTS
+# AGENTS.md
 
-## Proposito
-Este documento resume los agentes de IA implicados en el proyecto "Curriculum Interactivo con IA" y define responsabilidades, interfaces y restricciones para asegurar respuestas alineadas con el curriculo del candidato.
+## Project overview
+- "Curriculum Interactivo con IA" combina Django (API RAG) y Streamlit (UI) para exponer un currículum interactivo con chatbot.
+- RAG offline: ingestión de CV sanitizado, chunking y FAISS; online: embeddings Gemini + recuperación + respuesta en streaming.
+- Documentación clave: `docs/requisitos.md` (requisitos), `docs/plan_implementacion.md` (plan), `README.md` (resumen) y este archivo.
 
-## Panorama General
-- **Agente de Ingesta**: procesa el curriculo sanitizado y construye/actualiza el almacén vectorial FAISS.
-- **Agente de Recuperacion**: recibe embeddings de las consultas y devuelve fragmentos relevantes desde FAISS.
-- **Agente de Conversacion**: orquesta el flujo RAG, genera las respuestas en streaming usando Gemini y mantiene el contexto.
-- **Agente de Observabilidad (opcional)**: registra métricas, latencia y errores para el monitoreo continuo.
+## Repo layout
+- `backend/` proyecto Django con configuración base (`backend/settings.py`, `urls.py`, `asgi.py`, `wsgi.py`).
+- `frontend/` aplicación Streamlit (`app.py`) con chat básico y `__init__.py`.
+- `docs/` requisitos y plan de implementación.
+- `Dockerfile`, `docker-compose.yml`, `requirements.txt`, `pyproject.toml` y `.gitignore` en raíz.
 
-## Responsabilidades Clave
-- Agente de Ingesta
-  - Validar formato del documento de origen (PDF/Markdown) y versionarlo.
-  - Fragmentar contenido en chunks, calcular embeddings y persistirlos.
-  - Ejecutarse bajo demanda o pipeline CI cuando cambie el curriculo.
-- Agente de Recuperacion
-  - Servir consultas de similitud usando FAISS con un SLA < 150 ms por búsqueda.
-  - Exponer interfaz clara (método/endpoint) para que el agente conversacional pueda reutilizarlo.
-- Agente de Conversacion
-  - Aplicar memoria conversacional limitada a la sesión en curso.
-  - Interceptar preguntas fuera de alcance y responder conforme a FR-009.
-  - Gestionar tokens de API y fallback en caso de errores temporales.
-- Agente de Observabilidad
-  - Emitir eventos de latencia, errores de la API de Gemini y ratio de recurrencia de preguntas.
-  - Integrarse con la solución de logs elegida (p. ej. ELK, Prometheus) sin exponer datos sensibles.
+## Setup commands
+- Crear entorno virtual: `python3 -m venv .venv && source .venv/bin/activate` (Linux/macOS) o `.\.venv\Scripts\activate` (Windows).
+- Instalar dependencias principales: `pip install -r requirements.txt`.
+- Instalar en modo editable + extras dev: `pip install -e .[dev]`.
+- Copiar variables: `cp .env.example .env` (crear `.env.example` si no existe) y completar claves (`GEMINI_API_KEY`, DB, Redis).
 
-## Flujo de Datos
-1. El frontend envía la pregunta y el historial al backend.
-2. El agente de Conversacion solicita embeddings al servicio de embeddings (Gemini) y llama al Agente de Recuperacion.
-3. El Agente de Recuperacion devuelve contexto; el agente de Conversacion construye el prompt y llama a Gemini.
-4. La respuesta se transmite al usuario y el Agente de Observabilidad registra métricas clave.
+## Build & run
+- Backend local: `DJANGO_DEBUG=true python backend/manage.py runserver 0.0.0.0:8000`.
+- Streamlit local: `streamlit run frontend/app.py --server.port 8501`.
+- Docker: `docker compose up --build` levanta backend, frontend, worker y Redis; monta volumen `vectorstore-data`.
+- Comando de ingestión (a implementar): `python backend/manage.py build_vector_store --source docs/cv_sanitizado.pdf`.
 
-## Restricciones y Guardrails
-- Uso exclusivo de datos del curriculo sanitizado; preguntas externas deben recibir negativa educada.
-- Manejo seguro de credenciales (`GEMINI_API_KEY` via variables de entorno).
-- Registro de logs sin incluir datos personales ni preguntas sensibles.
-- Cumplir con latencia de primer token < 2 s y tiempo total < 5 s para mantener experiencia fluida.
+## Tests
+- Ejecutar suite principal: `pytest` (usa `backend.settings` por defecto).
+- Tests Django focalizados: `pytest backend/tests`.
+- Añadir/actualizar pruebas al tocar lógica RAG, endpoints y Streamlit helpers.
+- Si hay regresiones, correr linters (`ruff`, `black`) antes de reintentar.
 
-## Operativa y Mantenimiento
-- Automatizar la regeneración de embeddings tras cada actualización del curriculo.
-- Documentar comandos de gestión (`manage.py build_vector_store`, scripts Streamlit) en `README` y `docs/`.
-- Establecer alertas cuando aumente la tasa de preguntas sin respuesta o cuando FAISS no encuentre resultados.
-- Revisar prompts y plantillas periódicamente para evitar derivas o alucinaciones.
+## Linting & formatting
+- Revisar estilo: `ruff check .` (corrige con `ruff check . --fix`).
+- Formatear Python: `black .` (line length 88).
+- Mantener importaciones ordenadas; evitar introducir paquetes no usados en `requirements.txt` / `pyproject.toml`.
 
-## Consideraciones Futuras
-- Extender memoria conversacional entre sesiones autenticadas.
-- Añadir agente de analítica que clasifique preguntas recurrentes para retroalimentar mejoras del curriculo.
-- Evaluar soporte multilingüe añadiendo detección de idioma y traducción previa.
+## Data & secrets
+- CV sanitizado sin datos sensibles (requisito RNF-004); almacenar en `docs/` o `data/`.
+- Vector store FAISS persistido en `vectorstore-data` (ignorado por git).
+- Gestionar claves API vía `.env` y variables de entorno Docker/CI; nunca exponer en commits.
+
+## Agent collaboration tips
+- Usar `rg` para búsquedas y respetar las instrucciones del CLI: comandos con `['bash','-lc', ...]` y `workdir` explícito.
+- No revertir cambios ajenos; si aparecen modificaciones inesperadas, consultar al usuario.
+- Favorecer comentarios de código solo para bloques complejos; mantener ASCII.
+- Si faltan endpoints o scripts referenciados (p.ej. `/chat/`), crear scaffolds mínimos antes de integrar lógica completa.
+
+## Deployment notes
+- Imagen base `Dockerfile` soporta modos `APP_SERVICE=backend|streamlit|worker|scheduler` (entrypoint corre migraciones y lanza servicio).
+- Ajustar `docker-compose.yml` para producción (secretos, volúmenes persistentes) y añadir reverse proxy si es necesario.
+- Smoke tests tras despliegue: `curl http://<host>:8000/health/` y abrir interfaz Streamlit en `:8501`.
