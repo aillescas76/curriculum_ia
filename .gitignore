@@ -1,0 +1,80 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+.conda/
+.pyenv/
+
+# Project settings & secrets
+.env
+.env.*
+*.env
+*.ini
+*.cfg
+*.toml
+!pyproject.toml
+
+# Build & packaging
+build/
+dist/
+*.egg-info/
+.eggs/
+*.manifest
+*.spec
+
+# Testing & coverage
+.coverage
+coverage.xml
+htmlcov/
+.pytest_cache/
+.mypy_cache/
+.tox/
+.nox/
+
+# IDE & tooling
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Django
+*.log
+staticfiles/
+media/
+local_settings.py
+settings_local.py
+db.sqlite3
+
+# Streamlit
+.streamlit/
+.streamlit/secrets.toml
+
+# Vector stores / embeddings
+vectorstore/
+faiss_index/
+*.faiss
+*.npy
+*.npz
+
+# Celery / Redis runtime data
+celerybeat-schedule
+celerybeat.pid
+redis-data/
+
+# Docker
+*.pid
+*.pid.lock
+.docker/
+
+# Misc
+logs/
+.tmp/

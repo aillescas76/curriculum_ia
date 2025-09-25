@@ -1,0 +1,51 @@
+[build-system]
+requires = ["setuptools>=67", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "curriculum-interactivo-ia"
+version = "0.1.0"
+description = "Curriculum interactivo con IA basado en Django, LangChain y Streamlit"
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [
+  { name = "Equipo Curriculum IA" }
+]
+dependencies = [
+  "Django>=4.2,<5.0",
+  "djangorestframework>=3.15,<4.0",
+  "langchain>=0.2,<0.3",
+  "google-generativeai>=0.7,<0.8",
+  "faiss-cpu>=1.8,<1.9",
+  "streamlit>=1.34,<1.40",
+  "celery>=5.3,<5.4",
+  "redis>=5.0,<6.0",
+  "gunicorn>=21.2,<22.0",
+  "python-dotenv>=1.0,<2.0",
+  "psycopg[binary]>=3.1,<3.2",
+  "uvicorn[standard]>=0.30,<0.31",
+  "httpx>=0.27,<0.28",
+  "requests>=2.32,<3.0",
+  "pydantic>=2.6,<2.8"
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.2,<9.0",
+  "pytest-django>=4.8,<5.0",
+  "black>=24.4,<25.0",
+  "ruff>=0.5,<0.6"
+]
+
+[tool.black]
+line-length = 88
+
+[tool.ruff]
+line-length = 88
+select = ["E", "F", "B", "I", "C90"]
+ignore = []
+
+[tool.pytest.ini_options]
+addopts = "-ra"
+python_files = ["tests.py", "test_*.py", "*_tests.py"]
+DJANGO_SETTINGS_MODULE = "backend.settings"

@@ -1,0 +1,60 @@
+version: "3.9"
+
+services:
+  backend:
+    build:
+      context: .
+    environment:
+      APP_SERVICE: backend
+      DJANGO_DEBUG: "true"
+      DJANGO_ALLOWED_HOSTS: "*"
+      GEMINI_API_KEY: "${GEMINI_API_KEY:-}"
+      FAISS_INDEX_PATH: /app/vectorstore/index.faiss
+      REDIS_URL: redis://redis:6379/0
+    ports:
+      - "8000:8000"
+    depends_on:
+      redis:
+        condition: service_started
+    volumes:
+      - .:/app
+      - vectorstore-data:/app/vectorstore
+
+  frontend:
+    build:
+      context: .
+    environment:
+      APP_SERVICE: streamlit
+      BACKEND_BASE_URL: http://backend:8000
+    ports:
+      - "8501:8501"
+    depends_on:
+      backend:
+        condition: service_started
+    volumes:
+      - .:/app
+
+  worker:
+    build:
+      context: .
+    environment:
+      APP_SERVICE: worker
+      REDIS_URL: redis://redis:6379/0
+    depends_on:
+      backend:
+        condition: service_started
+      redis:
+        condition: service_started
+    volumes:
+      - .:/app
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+
+volumes:
+  vectorstore-data:
+  redis-data:
