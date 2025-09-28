@@ -82,6 +82,8 @@ MEDIA_ROOT = BASE_DIR / "media"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
+VECTORSTORE_DIR = Path(os.environ.get("VECTORSTORE_DIR", BASE_DIR / "vectorstore-data"))
+
 REST_FRAMEWORK = {
     "DEFAULT_RENDERER_CLASSES": [
         "rest_framework.renderers.JSONRenderer",
